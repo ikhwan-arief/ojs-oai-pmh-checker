@@ -1,0 +1,23 @@
+{
+  "input_url": "https://jurnal.example.ac.id/index.php/nama-jurnal",
+  "selected_endpoint": "",
+  "metadata_prefix": "oai_dc",
+  "harvestability_score": 5,
+  "harvestability_status": "Kemungkinan besar gagal di-harvest",
+  "endpoint_attempts": [
+    {
+      "endpoint_url": "https://jurnal.example.ac.id/index.php/nama-jurnal/oai",
+      "status": "Gagal",
+      "reason": "Respons HTML, bukan XML.",
+      "http_status": 200
+    }
+  ],
+  "issues": [
+    {
+      "priority": "P1",
+      "severity": "Critical",
+      "symptom": "Endpoint OAI-PMH tidak menghasilkan Identify yang valid.",
+      "owner": "Pengelola Jurnal dan Tim IT"
+    }
+  ]
+}

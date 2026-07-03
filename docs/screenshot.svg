@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Preview aplikasi Pemeriksa OAI-PMH Jurnal OJS</title>
+  <desc id="desc">Preview antarmuka Streamlit untuk audit endpoint OAI-PMH jurnal OJS.</desc>
+  <rect width="1440" height="900" fill="#f7f8fb"/>
+  <rect x="0" y="0" width="300" height="900" fill="#ffffff"/>
+  <rect x="300" y="0" width="1" height="900" fill="#e5e7eb"/>
+  <text x="34" y="54" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Panduan singkat</text>
+  <text x="34" y="92" font-family="Arial, sans-serif" font-size="15" fill="#374151">1. Masukkan URL jurnal</text>
+  <text x="34" y="122" font-family="Arial, sans-serif" font-size="15" fill="#374151">2. Klik Periksa OAI-PMH</text>
+  <text x="34" y="152" font-family="Arial, sans-serif" font-size="15" fill="#374151">3. Lihat status dan rekomendasi</text>
+  <text x="34" y="215" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Pengaturan lanjutan</text>
+  <rect x="34" y="245" width="220" height="42" rx="6" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="49" y="272" font-family="Arial, sans-serif" font-size="14" fill="#374151">Maksimal record: 50</text>
+  <rect x="34" y="303" width="220" height="42" rx="6" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="49" y="330" font-family="Arial, sans-serif" font-size="14" fill="#374151">Timeout: 15 detik</text>
+  <rect x="34" y="361" width="220" height="42" rx="6" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="49" y="388" font-family="Arial, sans-serif" font-size="14" fill="#374151">metadataPrefix: oai_dc</text>
+
+  <text x="350" y="70" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111827">Pemeriksa OAI-PMH Jurnal OJS</text>
+  <text x="352" y="108" font-family="Arial, sans-serif" font-size="17" fill="#4b5563">Masukkan URL website jurnal untuk menemukan endpoint OAI-PMH, memeriksa validitas,</text>
+  <text x="352" y="134" font-family="Arial, sans-serif" font-size="17" fill="#4b5563">menampilkan metadata publikasi, dan memberi rekomendasi perbaikan.</text>
+  <rect x="352" y="164" width="980" height="48" rx="8" fill="#ecfdf5" stroke="#a7f3d0"/>
+  <text x="372" y="194" font-family="Arial, sans-serif" font-size="15" fill="#065f46">Aplikasi hanya membaca metadata publik dari endpoint OAI-PMH. Tidak membutuhkan login ke OJS.</text>
+
+  <text x="352" y="258" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111827">URL website jurnal atau URL OAI-PMH</text>
+  <rect x="352" y="278" width="780" height="52" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="372" y="311" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af">https://jurnal.example.ac.id/index.php/nama-jurnal</text>
+  <rect x="1150" y="278" width="182" height="52" rx="8" fill="#2563eb"/>
+  <text x="1180" y="311" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Periksa OAI-PMH</text>
+
+  <rect x="352" y="376" width="980" height="58" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="382" y="411" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Ringkasan</text>
+  <text x="500" y="411" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Endpoint yang Diuji</text>
+  <text x="680" y="411" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Metadata Format</text>
+  <text x="850" y="411" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Publikasi</text>
+  <text x="970" y="411" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Kualitas Metadata</text>
+  <text x="1170" y="411" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Rekomendasi</text>
+
+  <rect x="352" y="470" width="230" height="128" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="375" y="504" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Status akhir</text>
+  <text x="375" y="542" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#047857">Siap di-harvest</text>
+  <rect x="606" y="470" width="230" height="128" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="629" y="504" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Harvestability score</text>
+  <text x="629" y="548" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#111827">95/100</text>
+  <rect x="860" y="470" width="230" height="128" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="883" y="504" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Record ditemukan</text>
+  <text x="883" y="548" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#111827">50</text>
+  <rect x="1114" y="470" width="218" height="128" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="1137" y="504" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">HTTP status terakhir</text>
+  <text x="1137" y="548" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#111827">200</text>
+
+  <rect x="352" y="638" width="980" height="178" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="380" y="676" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#111827">Rekomendasi Action</text>
+  <line x1="380" y1="704" x2="1300" y2="704" stroke="#e5e7eb"/>
+  <text x="380" y="740" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#374151">Prioritas</text>
+  <text x="520" y="740" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#374151">Gejala</text>
+  <text x="850" y="740" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#374151">Action</text>
+  <text x="380" y="782" font-family="Arial, sans-serif" font-size="15" fill="#047857">P3</text>
+  <text x="520" y="782" font-family="Arial, sans-serif" font-size="15" fill="#374151">Metadata perlu dilengkapi</text>
+  <text x="850" y="782" font-family="Arial, sans-serif" font-size="15" fill="#374151">Periksa title, author, abstract, date, language</text>
+</svg>

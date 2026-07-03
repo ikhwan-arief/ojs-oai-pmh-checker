@@ -1,0 +1,35 @@
+{
+  "input_url": "https://jurnal.example.ac.id/index.php/nama-jurnal",
+  "selected_endpoint": "https://jurnal.example.ac.id/index.php/nama-jurnal/oai",
+  "metadata_prefix": "oai_dc",
+  "harvestability_score": 95,
+  "harvestability_status": "Siap di-harvest",
+  "repository_info": {
+    "repository_name": "Contoh Jurnal",
+    "base_url": "https://jurnal.example.ac.id/index.php/nama-jurnal/oai",
+    "protocol_version": "2.0",
+    "admin_emails": ["admin@example.ac.id"],
+    "earliest_datestamp": "2024-01-01",
+    "deleted_record": "transient",
+    "granularity": "YYYY-MM-DD"
+  },
+  "metadata_formats": [
+    {
+      "metadata_prefix": "oai_dc",
+      "schema": "http://www.openarchives.org/OAI/2.0/oai_dc.xsd",
+      "metadata_namespace": "http://www.openarchives.org/OAI/2.0/oai_dc/"
+    }
+  ],
+  "records": [
+    {
+      "identifier": "oai:jurnal.example.ac.id:article/1",
+      "datestamp": "2026-01-15",
+      "title": "Contoh Artikel",
+      "creators": "Nama Penulis",
+      "date": "2026-01-15",
+      "publisher": "Contoh Penerbit",
+      "language": "id"
+    }
+  ],
+  "issues": []
+}
