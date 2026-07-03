@@ -10,6 +10,14 @@ Repository publik:
 https://github.com/ikhwan-arief/ojs-oai-pmh-checker
 ```
 
+Halaman akses publik GitHub Pages:
+
+```text
+https://ikhwan-arief.github.io/ojs-oai-pmh-checker/
+```
+
+Catatan: GitHub Pages menampilkan halaman publik proyek dan dokumentasi akses. Aplikasi interaktif Streamlit tetap perlu dijalankan lokal atau dideploy ke Streamlit Community Cloud karena GitHub Pages tidak menjalankan backend Python.
+
 ## Screenshot
 
 ![Screenshot aplikasi Pemeriksa OAI-PMH Jurnal OJS](docs/screenshot.png)
@@ -54,6 +62,8 @@ app.py
 ```
 
 5. Deploy aplikasi.
+
+Setelah deploy selesai, masukkan URL Streamlit Cloud ke bagian **Website** pada About repository agar pengguna bisa membuka aplikasi interaktif langsung dari GitHub.
 
 ## Contoh URL Input
 
