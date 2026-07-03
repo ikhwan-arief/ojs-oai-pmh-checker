@@ -9,4 +9,5 @@ __pycache__/
 .coverage
 htmlcov/
 .streamlit/secrets.toml
+.playwright-cli/
 *.log

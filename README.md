@@ -12,9 +12,9 @@ https://github.com/ikhwan-arief/ojs-oai-pmh-checker
 
 ## Screenshot
 
-![Preview aplikasi Pemeriksa OAI-PMH Jurnal OJS](docs/screenshot.svg)
+![Screenshot aplikasi Pemeriksa OAI-PMH Jurnal OJS](docs/screenshot.png)
 
-Catatan: gambar ini adalah preview tampilan aplikasi untuk README. Screenshot live dapat dibuat setelah dependency terpasang dan aplikasi dijalankan dengan `streamlit run app.py`.
+Screenshot ini diambil dari aplikasi Streamlit yang dijalankan lokal.
 
 ## Fungsi Utama
 
