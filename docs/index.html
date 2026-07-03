@@ -4,9 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pemeriksa OAI-PMH Jurnal OJS</title>
+    <link rel="icon" href="data:," />
     <meta
       name="description"
-      content="Aplikasi Streamlit untuk memeriksa validitas OAI-PMH pada website jurnal OJS, kualitas metadata, dan kesiapan harvest."
+      content="Aplikasi web publik untuk memeriksa endpoint OAI-PMH jurnal OJS langsung dari GitHub Pages."
     />
     <style>
       :root {
@@ -16,9 +17,12 @@
         --text: #111827;
         --muted: #4b5563;
         --line: #dbe3ef;
+        --soft: #eef2f7;
         --primary: #1d4ed8;
         --primary-dark: #1e40af;
-        --accent: #047857;
+        --danger: #b91c1c;
+        --warning: #b45309;
+        --good: #047857;
       }
 
       * {
@@ -31,233 +35,1501 @@
         color: var(--text);
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        line-height: 1.6;
+        line-height: 1.5;
       }
 
-      header,
-      main,
-      footer {
-        width: min(1120px, calc(100% - 40px));
-        margin: 0 auto;
+      .layout {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        min-height: 100vh;
       }
 
-      header {
-        padding: 56px 0 30px;
+      aside {
+        border-right: 1px solid var(--line);
+        background: #f1f5f9;
+        padding: 28px 24px;
       }
 
-      .eyebrow {
-        margin: 0 0 12px;
-        color: var(--accent);
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-transform: uppercase;
+      main {
+        padding: 48px clamp(18px, 4vw, 56px);
       }
 
       h1 {
-        max-width: 840px;
         margin: 0;
-        font-size: clamp(36px, 6vw, 64px);
+        font-size: clamp(34px, 5vw, 54px);
         line-height: 1.05;
         letter-spacing: 0;
       }
 
-      .lede {
-        max-width: 820px;
-        margin: 22px 0 0;
+      h2 {
+        margin: 0 0 14px;
+        font-size: 22px;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      p {
+        margin: 0 0 14px;
+      }
+
+      .subtitle {
+        max-width: 980px;
+        margin-top: 18px;
         color: var(--muted);
-        font-size: 19px;
+        font-size: 18px;
       }
 
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 30px;
-      }
-
-      .button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 10px 16px;
-        border: 1px solid var(--primary);
-        border-radius: 6px;
-        background: var(--primary);
-        color: #ffffff;
-        font-weight: 700;
-        text-decoration: none;
-      }
-
-      .button:hover {
-        background: var(--primary-dark);
-      }
-
-      .button.secondary {
-        background: #ffffff;
-        color: var(--primary);
-      }
-
-      .notice {
-        margin-top: 26px;
-        padding: 16px 18px;
+      .note {
+        margin-top: 20px;
         border: 1px solid #bfdbfe;
         border-radius: 8px;
         background: #eff6ff;
         color: #1e3a8a;
+        padding: 14px 16px;
       }
 
-      .screenshot {
-        margin: 20px 0 34px;
-        overflow: hidden;
+      .panel {
+        margin-top: 24px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
-        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+        padding: 20px;
       }
 
-      .screenshot img {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      .grid {
+      .form-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: end;
       }
 
-      .card {
-        min-height: 160px;
-        padding: 22px;
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #1f2937;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--text);
+        font: inherit;
+        padding: 9px 12px;
+      }
+
+      input[type="checkbox"] {
+        width: auto;
+        min-height: auto;
+        margin-right: 8px;
+      }
+
+      button,
+      .button {
+        min-height: 44px;
+        border: 1px solid var(--primary);
+        border-radius: 6px;
+        background: var(--primary);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        padding: 10px 16px;
+        text-decoration: none;
+      }
+
+      button:hover,
+      .button:hover {
+        background: var(--primary-dark);
+      }
+
+      button.secondary {
+        background: #ffffff;
+        color: var(--primary);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .sidebar-block {
+        margin-bottom: 28px;
+      }
+
+      .sidebar-block ol {
+        padding-left: 20px;
+      }
+
+      .setting {
+        margin-bottom: 15px;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        color: #1f2937;
+        font-size: 14px;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 26px;
+      }
+
+      .tab-button {
+        border-color: var(--line);
+        background: #ffffff;
+        color: #1f2937;
+      }
+
+      .tab-button.active {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #ffffff;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric {
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: var(--panel);
+        background: #ffffff;
+        padding: 16px;
       }
 
-      .card h2 {
-        margin: 0 0 10px;
-        font-size: 20px;
-      }
-
-      .card p,
-      .card ul {
-        margin: 0;
+      .metric span {
+        display: block;
         color: var(--muted);
+        font-size: 13px;
       }
 
-      .card ul {
-        padding-left: 20px;
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 24px;
+      }
+
+      .status-good {
+        color: var(--good);
+      }
+
+      .status-warning {
+        color: var(--warning);
+      }
+
+      .status-danger {
+        color: var(--danger);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f8fafc;
+        color: #1f2937;
+        font-weight: 700;
+      }
+
+      .empty {
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        color: var(--muted);
+        padding: 18px;
+      }
+
+      .download-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .download-row button {
+        background: #ffffff;
+        color: var(--primary);
+      }
+
+      pre {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e5e7eb;
+        padding: 14px;
+        white-space: pre-wrap;
       }
 
       code {
         border-radius: 4px;
         background: #eef2ff;
         color: #3730a3;
-        font-size: 0.95em;
         padding: 2px 5px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
-      footer {
-        padding: 34px 0 54px;
-        color: var(--muted);
-        font-size: 14px;
+      .hidden {
+        display: none;
       }
 
-      @media (max-width: 850px) {
-        header,
-        main,
-        footer {
-          width: min(100% - 28px, 1120px);
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
         }
 
-        .grid {
+        aside {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .form-grid,
+        .metrics {
           grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <header>
-      <p class="eyebrow">OAI-PMH checker untuk jurnal OJS</p>
-      <h1>Pemeriksa OAI-PMH Jurnal OJS</h1>
-      <p class="lede">
-        Aplikasi Python dan Streamlit untuk menemukan endpoint OAI-PMH jurnal, memeriksa
-        validitasnya, menampilkan metadata publikasi yang bisa dipanen harvester, dan memberi
-        rekomendasi perbaikan untuk pengelola jurnal serta tim IT.
-      </p>
-      <div class="actions">
-        <a class="button" href="https://github.com/ikhwan-arief/ojs-oai-pmh-checker">Buka Repository GitHub</a>
-        <a class="button secondary" href="https://share.streamlit.io/">Deploy di Streamlit Community Cloud</a>
-      </div>
-      <div class="notice">
-        GitHub Pages ini adalah halaman akses publik proyek. Untuk menjalankan aplikasi interaktif,
-        deploy repository ini ke Streamlit Community Cloud dengan main file path <code>app.py</code>.
-      </div>
-    </header>
+    <div class="layout">
+      <aside>
+        <section class="sidebar-block">
+          <h2>Panduan singkat</h2>
+          <ol>
+            <li>Masukkan URL halaman utama jurnal, contoh <code>https://jurnal.example.ac.id/index.php/nama-jurnal</code>.</li>
+            <li>URL endpoint lengkap seperti <code>/oai</code> juga bisa digunakan.</li>
+            <li>Klik tombol <strong>Periksa OAI-PMH</strong>.</li>
+            <li>Lihat status, endpoint, metadata, publikasi, dan rekomendasi.</li>
+          </ol>
+        </section>
 
-    <main>
-      <section class="screenshot" aria-label="Screenshot aplikasi">
-        <img src="screenshot.png" alt="Screenshot aplikasi Pemeriksa OAI-PMH Jurnal OJS" />
-      </section>
+        <section class="sidebar-block">
+          <h2>Pengaturan</h2>
+          <div class="setting">
+            <label for="maxRecords">Jumlah record maksimal</label>
+            <input id="maxRecords" type="number" min="10" max="500" value="50" />
+          </div>
+          <div class="setting">
+            <label for="timeout">Timeout request (detik)</label>
+            <input id="timeout" type="number" min="5" max="60" value="15" />
+          </div>
+          <div class="setting">
+            <label for="metadataPrefix">Metadata prefix</label>
+            <input id="metadataPrefix" value="oai_dc" />
+          </div>
+          <div class="setting checkbox-row">
+            <input id="autoDiscover" type="checkbox" checked />
+            <label for="autoDiscover">Coba beberapa kandidat endpoint otomatis</label>
+          </div>
+          <div class="setting checkbox-row">
+            <input id="followTokens" type="checkbox" checked />
+            <label for="followTokens">Ikuti resumptionToken</label>
+          </div>
+          <div class="setting">
+            <label for="maxTokenPages">Jumlah halaman token maksimal</label>
+            <input id="maxTokenPages" type="number" min="1" max="20" value="5" />
+          </div>
+          <div class="setting checkbox-row">
+            <input id="technicalDetail" type="checkbox" />
+            <label for="technicalDetail">Tampilkan detail teknis</label>
+          </div>
+        </section>
+      </aside>
 
-      <section class="grid" aria-label="Fitur utama">
-        <article class="card">
-          <h2>Input sederhana</h2>
-          <p>
-            Pengguna cukup memasukkan URL website jurnal. Aplikasi otomatis mencoba kandidat endpoint
-            OAI-PMH umum untuk OJS.
-          </p>
-        </article>
-        <article class="card">
-          <h2>Audit harvestability</h2>
-          <p>
-            Pemeriksaan mencakup <code>Identify</code>, <code>ListMetadataFormats</code>,
-            <code>ListRecords</code>, resumptionToken, dan skor kesiapan harvest.
-          </p>
-        </article>
-        <article class="card">
-          <h2>Rekomendasi action</h2>
-          <p>
-            Rekomendasi dipisahkan untuk pengelola jurnal dan tim IT agar masalah metadata,
-            routing, server, SSL, atau OAI bisa ditangani oleh pihak yang tepat.
-          </p>
-        </article>
-      </section>
+      <main>
+        <h1>Pemeriksa OAI-PMH Jurnal OJS</h1>
+        <p class="subtitle">
+          Masukkan URL website jurnal. Aplikasi akan mencoba menemukan endpoint OAI-PMH,
+          memeriksa validitasnya, menampilkan metadata publikasi yang tersedia, dan memberi
+          rekomendasi jika data tidak bisa ditarik oleh harvester.
+        </p>
+        <div class="note">
+          Aplikasi ini berjalan langsung di GitHub Pages dan hanya membaca metadata publik dari endpoint OAI-PMH.
+          Tidak membutuhkan login ke OJS.
+        </div>
 
-      <section class="grid" aria-label="Cara akses">
-        <article class="card">
-          <h2>Jalankan lokal</h2>
-          <ul>
-            <li><code>python -m venv .venv</code></li>
-            <li><code>pip install -r requirements.txt</code></li>
-            <li><code>streamlit run app.py</code></li>
-          </ul>
-        </article>
-        <article class="card">
-          <h2>Deploy publik</h2>
-          <p>
-            Pilih repository ini di Streamlit Community Cloud, branch <code>main</code>, dan main file
-            path <code>app.py</code>.
-          </p>
-        </article>
-        <article class="card">
-          <h2>Keamanan URL</h2>
-          <p>
-            Aplikasi hanya mengizinkan URL HTTP/HTTPS publik, memblokir localhost/private IP, membatasi
-            redirect, ukuran respons, dan tidak mengambil PDF atau file besar.
-          </p>
-        </article>
-      </section>
-    </main>
+        <section class="panel">
+          <div class="form-grid">
+            <div>
+              <label for="journalUrl">URL website jurnal atau URL OAI-PMH</label>
+              <input
+                id="journalUrl"
+                placeholder="https://jurnal.example.ac.id/index.php/nama-jurnal"
+                autocomplete="url"
+              />
+            </div>
+            <button id="checkButton" type="button">Periksa OAI-PMH</button>
+          </div>
+          <p id="runStatus" class="subtitle" aria-live="polite"></p>
+        </section>
 
-    <footer>
-      <p>
-        MIT License. Source code:
-        <a href="https://github.com/ikhwan-arief/ojs-oai-pmh-checker">github.com/ikhwan-arief/ojs-oai-pmh-checker</a>.
-      </p>
-    </footer>
+        <section id="results" class="hidden">
+          <nav class="tabs" aria-label="Tab hasil">
+            <button class="tab-button active" type="button" data-tab="summary">Ringkasan</button>
+            <button class="tab-button" type="button" data-tab="endpoints">Endpoint yang Diuji</button>
+            <button class="tab-button" type="button" data-tab="repository">Informasi Repository</button>
+            <button class="tab-button" type="button" data-tab="formats">Metadata Format</button>
+            <button class="tab-button" type="button" data-tab="records">Publikasi</button>
+            <button class="tab-button" type="button" data-tab="quality">Kualitas Metadata</button>
+            <button class="tab-button" type="button" data-tab="issues">Rekomendasi Action</button>
+            <button class="tab-button" type="button" data-tab="technical">Detail Teknis</button>
+          </nav>
+
+          <div id="summary" class="tab-panel active panel"></div>
+          <div id="endpoints" class="tab-panel panel"></div>
+          <div id="repository" class="tab-panel panel"></div>
+          <div id="formats" class="tab-panel panel"></div>
+          <div id="records" class="tab-panel panel"></div>
+          <div id="quality" class="tab-panel panel"></div>
+          <div id="issues" class="tab-panel panel"></div>
+          <div id="technical" class="tab-panel panel"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        audit: null,
+      };
+
+      const OAI_NS = "http://www.openarchives.org/OAI/2.0/";
+      const DC_NS = "http://purl.org/dc/elements/1.1/";
+      const blockedPageParts = new Set([
+        "about",
+        "issue",
+        "article",
+        "archives",
+        "announcement",
+        "login",
+        "user",
+        "search",
+      ]);
+
+      document.getElementById("checkButton").addEventListener("click", runAudit);
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => activateTab(button.dataset.tab));
+      });
+
+      function activateTab(tabId) {
+        document.querySelectorAll(".tab-button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.tab === tabId);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === tabId);
+        });
+      }
+
+      async function runAudit() {
+        const button = document.getElementById("checkButton");
+        const status = document.getElementById("runStatus");
+        button.disabled = true;
+        status.textContent = "Memeriksa endpoint OAI-PMH...";
+
+        try {
+          const settings = getSettings();
+          const inputUrl = document.getElementById("journalUrl").value;
+          const audit = await auditUrl(inputUrl, settings);
+          state.audit = audit;
+          renderAudit(audit, settings);
+          status.textContent = "Pemeriksaan selesai.";
+          document.getElementById("results").classList.remove("hidden");
+        } catch (error) {
+          status.textContent = error.message || "Pemeriksaan gagal.";
+          document.getElementById("results").classList.add("hidden");
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function getSettings() {
+        return {
+          maxRecords: clampNumber(document.getElementById("maxRecords").value, 10, 500, 50),
+          timeout: clampNumber(document.getElementById("timeout").value, 5, 60, 15),
+          metadataPrefix: document.getElementById("metadataPrefix").value.trim() || "oai_dc",
+          autoDiscover: document.getElementById("autoDiscover").checked,
+          followTokens: document.getElementById("followTokens").checked,
+          maxTokenPages: clampNumber(document.getElementById("maxTokenPages").value, 1, 20, 5),
+          technicalDetail: document.getElementById("technicalDetail").checked,
+        };
+      }
+
+      async function auditUrl(inputUrl, settings) {
+        const checkedAt = new Date().toISOString();
+        const normalizedUrl = normalizeUrl(inputUrl);
+        validatePublicUrl(normalizedUrl);
+
+        const audit = {
+          inputUrl,
+          normalizedUrl,
+          selectedEndpoint: "",
+          metadataPrefix: settings.metadataPrefix,
+          endpointAttempts: [],
+          repositoryInfo: null,
+          metadataFormats: [],
+          records: [],
+          diagnostic: emptyDiagnostic(),
+          issues: [],
+          requestLog: [],
+          noRecordsMatch: false,
+          listRecordsSucceeded: false,
+          tokenError: "",
+          tokenTruncated: false,
+          harvestabilityScore: 0,
+          harvestabilityStatus: "Kemungkinan besar gagal di-harvest",
+          checkedAt,
+        };
+
+        const endpoints = settings.autoDiscover ? discoverOaiEndpoints(normalizedUrl) : [normalizedUrl];
+        for (const endpoint of endpoints) {
+          const response = await requestOai(endpoint, { verb: "Identify" }, settings);
+          audit.requestLog.push(response);
+          const attempt = responseToAttempt(endpoint, response);
+          if (response.ok) {
+            const parsed = parseXmlResponse(response.text);
+            if (!parsed.ok) {
+              response.errorType = "xml_parse_error";
+              response.errorMessage = parsed.error;
+              attempt.status = "Gagal";
+              attempt.reason = "Respons XML tidak valid.";
+            } else if (!isOaiRoot(parsed.root)) {
+              attempt.status = "Gagal";
+              attempt.reason = "Root XML bukan OAI-PMH.";
+            } else if (getOaiError(parsed.root)) {
+              const error = getOaiError(parsed.root);
+              attempt.status = "Gagal";
+              attempt.reason = `OAI error ${error.code}: ${error.message}`;
+              response.oaiErrorCode = error.code;
+              response.oaiErrorMessage = error.message;
+            } else if (!findFirst(parsed.root, "Identify")) {
+              attempt.status = "Gagal";
+              attempt.reason = "Respons OAI-PMH tidak mengandung Identify.";
+            } else {
+              attempt.status = "Valid";
+              attempt.reason = "Identify valid.";
+              attempt.selected = true;
+              audit.selectedEndpoint = endpoint;
+              audit.repositoryInfo = parseIdentify(parsed.root);
+              audit.endpointAttempts.push(attempt);
+              break;
+            }
+          }
+          audit.endpointAttempts.push(attempt);
+        }
+
+        if (audit.selectedEndpoint) {
+          await checkMetadataFormats(audit, settings);
+          await checkListRecords(audit, settings);
+        }
+
+        audit.diagnostic = diagnoseRecords(audit.records);
+        audit.issues = generateRecommendations(audit);
+        audit.harvestabilityScore = computeHarvestabilityScore(audit);
+        audit.harvestabilityStatus = classifyHarvestability(audit.harvestabilityScore, audit.issues);
+        return audit;
+      }
+
+      async function checkMetadataFormats(audit, settings) {
+        const response = await requestOai(audit.selectedEndpoint, { verb: "ListMetadataFormats" }, settings);
+        audit.requestLog.push(response);
+        if (!response.ok) return;
+        const parsed = parseXmlResponse(response.text);
+        if (!parsed.ok) {
+          response.errorType = "xml_parse_error";
+          response.errorMessage = parsed.error;
+          return;
+        }
+        const error = getOaiError(parsed.root);
+        if (error) {
+          response.errorType = "oai_error";
+          response.oaiErrorCode = error.code;
+          response.oaiErrorMessage = error.message;
+          response.errorMessage = `OAI error ${error.code}: ${error.message}`;
+          return;
+        }
+        audit.metadataFormats = parseMetadataFormats(parsed.root);
+      }
+
+      async function checkListRecords(audit, settings) {
+        let token = "";
+        const seenTokens = new Set();
+        for (let page = 0; page < settings.maxTokenPages; page += 1) {
+          const params = token
+            ? { verb: "ListRecords", resumptionToken: token }
+            : { verb: "ListRecords", metadataPrefix: settings.metadataPrefix };
+          const response = await requestOai(audit.selectedEndpoint, params, settings);
+          audit.requestLog.push(response);
+          if (!response.ok) break;
+
+          const parsed = parseXmlResponse(response.text);
+          if (!parsed.ok) {
+            response.errorType = "xml_parse_error";
+            response.errorMessage = parsed.error;
+            break;
+          }
+          const error = getOaiError(parsed.root);
+          if (error) {
+            response.errorType = "oai_error";
+            response.oaiErrorCode = error.code;
+            response.oaiErrorMessage = error.message;
+            response.errorMessage = `OAI error ${error.code}: ${error.message}`;
+            if (error.code === "noRecordsMatch") {
+              audit.noRecordsMatch = true;
+              audit.listRecordsSucceeded = true;
+            }
+            break;
+          }
+
+          audit.records.push(...parseRecords(parsed.root));
+          audit.listRecordsSucceeded = true;
+          token = getResumptionToken(parsed.root);
+          if (audit.records.length >= settings.maxRecords) {
+            audit.records = audit.records.slice(0, settings.maxRecords);
+            audit.tokenTruncated = Boolean(token);
+            break;
+          }
+          if (!settings.followTokens || !token) break;
+          if (seenTokens.has(token)) {
+            audit.tokenError = "resumptionToken berulang terus.";
+            break;
+          }
+          seenTokens.add(token);
+          if (page + 1 >= settings.maxTokenPages && token) audit.tokenTruncated = true;
+        }
+      }
+
+      async function requestOai(endpoint, params, settings) {
+        const requestUrl = safeJoinQuery(endpoint, params);
+        const startedAt = performance.now();
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), settings.timeout * 1000);
+        const responseData = {
+          requestUrl,
+          endpointUrl: endpoint,
+          ok: false,
+          httpStatus: null,
+          contentType: "",
+          responseTimeSeconds: 0,
+          finalUrl: "",
+          errorType: "",
+          errorMessage: "",
+          oaiErrorCode: "",
+          oaiErrorMessage: "",
+          text: "",
+          snippet: "",
+        };
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: "GET",
+            redirect: "follow",
+            signal: controller.signal,
+            headers: { Accept: "application/xml,text/xml,*/*;q=0.8" },
+          });
+          responseData.httpStatus = response.status;
+          responseData.contentType = response.headers.get("content-type") || "";
+          responseData.finalUrl = response.url;
+
+          if (isBlockedContentType(responseData.contentType) || looksLikeLargeFile(response.url)) {
+            responseData.errorType = "blocked_content_type";
+            responseData.errorMessage = "Respons tampak seperti file besar atau bukan XML OAI-PMH.";
+            return finishResponse(responseData, startedAt);
+          }
+
+          const text = await response.text();
+          responseData.text = text;
+          responseData.snippet = text.slice(0, 3000);
+          if (response.status === 403) {
+            responseData.errorType = "http_403";
+            responseData.errorMessage = "Server menolak akses ke endpoint OAI-PMH.";
+          } else if (response.status >= 500) {
+            responseData.errorType = "http_500";
+            responseData.errorMessage = "Server mengalami error saat memproses endpoint OAI-PMH.";
+          } else if (response.status >= 400) {
+            responseData.errorType = "http_error";
+            responseData.errorMessage = `HTTP error ${response.status}.`;
+          } else if (!text.trim()) {
+            responseData.errorType = "empty_content";
+            responseData.errorMessage = "Content kosong.";
+          } else if (isHtmlResponse(responseData.contentType, text)) {
+            responseData.errorType = "html_response";
+            responseData.errorMessage = "Respons HTML, bukan XML.";
+          } else {
+            responseData.ok = true;
+          }
+        } catch (error) {
+          if (error.name === "AbortError") {
+            responseData.errorType = "timeout";
+            responseData.errorMessage = "Request timeout. Server terlalu lama merespons.";
+          } else {
+            responseData.errorType = "connection_error";
+            responseData.errorMessage =
+              "Koneksi gagal atau diblokir CORS oleh server target. Browser tidak mengizinkan aplikasi GitHub Pages membaca respons tersebut.";
+          }
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+        return finishResponse(responseData, startedAt);
+      }
+
+      function finishResponse(responseData, startedAt) {
+        responseData.responseTimeSeconds = Math.round((performance.now() - startedAt) / 10) / 100;
+        return responseData;
+      }
+
+      function normalizeUrl(input) {
+        let value = String(input || "").trim();
+        if (!value) throw new Error("URL wajib diisi.");
+        if (!value.includes("://")) value = `https://${value}`;
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error("Hanya URL http dan https yang diizinkan.");
+        }
+        if (!url.hostname) throw new Error("URL harus memiliki hostname.");
+        url.hash = "";
+        return url.toString();
+      }
+
+      function validatePublicUrl(urlText) {
+        const url = new URL(urlText);
+        const host = url.hostname.toLowerCase();
+        if (host === "localhost" || host.endsWith(".localhost")) throw new Error("URL lokal tidak diizinkan.");
+        if (["127.0.0.1", "0.0.0.0", "::1", "[::1]"].includes(host)) throw new Error("URL lokal tidak diizinkan.");
+        if (isPrivateIpv4(host)) throw new Error("Private IP tidak diizinkan.");
+      }
+
+      function isPrivateIpv4(host) {
+        const match = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+        if (!match) return false;
+        const [a, b] = match.slice(1).map(Number);
+        return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a === 169;
+      }
+
+      function discoverOaiEndpoints(inputUrl) {
+        const url = new URL(inputUrl);
+        const candidates = [];
+        if (looksLikeOaiEndpoint(url)) candidates.push(url.toString());
+
+        let rootPath = stripKnownOjsPagePaths(url.pathname);
+        rootPath = stripTrailingIndex(rootPath);
+        if (rootPath && rootPath !== "/") candidates.push(withPath(url, appendOai(rootPath)));
+
+        const legacy = legacyOjsUrl(url, rootPath);
+        if (legacy) candidates.push(legacy);
+
+        if (url.pathname.replace(/\/$/, "")) {
+          candidates.push(withPath(url, appendOai(url.pathname)));
+          candidates.push(withPath(url, appendOai(url.pathname.replace(/\/$/, ""))));
+        }
+        candidates.push(withPath(url, "/oai"));
+        return dedupe(candidates);
+      }
+
+      function looksLikeOaiEndpoint(url) {
+        return url.pathname.toLowerCase().includes("/oai") || url.searchParams.get("page") === "oai" || url.searchParams.has("verb");
+      }
+
+      function stripKnownOjsPagePaths(path) {
+        const parts = path.split("/").filter(Boolean);
+        const lowered = parts.map((part) => part.toLowerCase());
+        for (const marker of blockedPageParts) {
+          const index = lowered.indexOf(marker);
+          if (index >= 0) return `/${parts.slice(0, index).join("/")}`;
+        }
+        return parts.length ? `/${parts.join("/")}` : "/";
+      }
+
+      function stripTrailingIndex(path) {
+        const parts = path.split("/").filter(Boolean);
+        if (parts[parts.length - 1]?.toLowerCase() === "index") parts.pop();
+        return parts.length ? `/${parts.join("/")}` : "/";
+      }
+
+      function appendOai(path) {
+        const clean = path.replace(/\/$/, "");
+        return clean.toLowerCase().endsWith("/oai") ? clean : `${clean}/oai`;
+      }
+
+      function withPath(baseUrl, path) {
+        const url = new URL(baseUrl.toString());
+        url.pathname = path;
+        url.search = "";
+        url.hash = "";
+        return url.toString();
+      }
+
+      function legacyOjsUrl(baseUrl, rootPath) {
+        const parts = rootPath.split("/").filter(Boolean);
+        let journal = "";
+        const indexPhp = parts.indexOf("index.php");
+        if (indexPhp >= 0 && parts.length > indexPhp + 1) journal = parts[indexPhp + 1];
+        else if (parts.length) journal = parts[parts.length - 1];
+        if (!journal) return "";
+        const url = new URL(baseUrl.toString());
+        url.pathname = "/index.php";
+        url.search = "";
+        url.searchParams.set("journal", journal);
+        url.searchParams.set("page", "oai");
+        url.hash = "";
+        return url.toString();
+      }
+
+      function dedupe(items) {
+        const seen = new Set();
+        const result = [];
+        for (const item of items) {
+          const key = item.includes("?") ? item : item.replace(/\/$/, "");
+          if (seen.has(key)) continue;
+          seen.add(key);
+          result.push(item);
+        }
+        return result;
+      }
+
+      function safeJoinQuery(urlText, params) {
+        const url = new URL(urlText);
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== undefined && value !== null) url.searchParams.set(key, value);
+        }
+        return url.toString();
+      }
+
+      function parseXmlResponse(text) {
+        const parser = new DOMParser();
+        const root = parser.parseFromString(text, "application/xml");
+        const error = root.getElementsByTagName("parsererror")[0];
+        if (error) return { ok: false, root, error: "Respons XML tidak valid. Harvester kemungkinan gagal membaca data." };
+        return { ok: true, root: root.documentElement, error: "" };
+      }
+
+      function isOaiRoot(root) {
+        return localName(root) === "OAI-PMH";
+      }
+
+      function findFirst(root, name) {
+        return Array.from(root.getElementsByTagName("*")).find((element) => localName(element) === name) || null;
+      }
+
+      function childrenByName(element, name) {
+        if (!element) return [];
+        return Array.from(element.children).filter((child) => localName(child) === name);
+      }
+
+      function firstChildText(element, name) {
+        const found = childrenByName(element, name)[0];
+        return cleanText(found?.textContent || "");
+      }
+
+      function parseIdentify(root) {
+        const identify = findFirst(root, "Identify");
+        return {
+          repositoryName: firstChildText(identify, "repositoryName"),
+          baseURL: firstChildText(identify, "baseURL"),
+          protocolVersion: firstChildText(identify, "protocolVersion"),
+          adminEmail: childrenByName(identify, "adminEmail").map((item) => cleanText(item.textContent)).filter(Boolean),
+          earliestDatestamp: firstChildText(identify, "earliestDatestamp"),
+          deletedRecord: firstChildText(identify, "deletedRecord"),
+          granularity: firstChildText(identify, "granularity"),
+        };
+      }
+
+      function parseMetadataFormats(root) {
+        return Array.from(root.getElementsByTagName("*"))
+          .filter((element) => localName(element) === "metadataFormat")
+          .map((element) => ({
+            metadataPrefix: firstChildText(element, "metadataPrefix"),
+            schema: firstChildText(element, "schema"),
+            metadataNamespace: firstChildText(element, "metadataNamespace"),
+          }));
+      }
+
+      function parseRecords(root) {
+        const listRecords = findFirst(root, "ListRecords");
+        if (!listRecords) return [];
+        return childrenByName(listRecords, "record").map((recordElement) => {
+          const header = childrenByName(recordElement, "header")[0];
+          const metadata = childrenByName(recordElement, "metadata")[0];
+          return {
+            identifier: firstChildText(header, "identifier"),
+            datestamp: firstChildText(header, "datestamp"),
+            setSpecs: childrenByName(header, "setSpec").map((item) => cleanText(item.textContent)).filter(Boolean),
+            title: dcValues(metadata, "title").join(" | "),
+            creators: dcValues(metadata, "creator").join("; "),
+            subjects: dcValues(metadata, "subject").join("; "),
+            description: dcValues(metadata, "description").join(" | "),
+            publisher: dcValues(metadata, "publisher").join(" | "),
+            date: dcValues(metadata, "date").join(" | "),
+            type: dcValues(metadata, "type").join(" | "),
+            format: dcValues(metadata, "format").join(" | "),
+            source: dcValues(metadata, "source").join(" | "),
+            language: dcValues(metadata, "language").join(" | "),
+            relation: dcValues(metadata, "relation").join(" | "),
+            coverage: dcValues(metadata, "coverage").join(" | "),
+            rights: dcValues(metadata, "rights").join(" | "),
+            deleted: header?.getAttribute("status")?.toLowerCase() === "deleted",
+          };
+        });
+      }
+
+      function dcValues(metadata, tagName) {
+        if (!metadata) return [];
+        return Array.from(metadata.getElementsByTagName("*"))
+          .filter((element) => localName(element) === tagName)
+          .map((element) => cleanText(element.textContent))
+          .filter(Boolean);
+      }
+
+      function getOaiError(root) {
+        const error = findFirst(root, "error");
+        if (!error) return null;
+        return { code: error.getAttribute("code") || "", message: cleanText(error.textContent) };
+      }
+
+      function getResumptionToken(root) {
+        const token = findFirst(root, "resumptionToken");
+        return cleanText(token?.textContent || "");
+      }
+
+      function diagnoseRecords(records) {
+        const diagnostic = emptyDiagnostic();
+        diagnostic.totalRecords = records.length;
+        diagnostic.deletedRecords = records.filter((record) => record.deleted).length;
+        diagnostic.activeRecords = diagnostic.totalRecords - diagnostic.deletedRecords;
+        diagnostic.withTitle = records.filter((record) => record.title).length;
+        diagnostic.withCreator = records.filter((record) => record.creators).length;
+        diagnostic.withDatestamp = records.filter((record) => record.datestamp).length;
+        diagnostic.withDate = records.filter((record) => record.date).length;
+        diagnostic.withIdentifier = records.filter((record) => record.identifier).length;
+        diagnostic.withDescription = records.filter((record) => record.description).length;
+        diagnostic.withPublisher = records.filter((record) => record.publisher).length;
+        diagnostic.withLanguage = records.filter((record) => record.language).length;
+
+        const counts = {};
+        records.forEach((record) => {
+          if (record.identifier) counts[record.identifier] = (counts[record.identifier] || 0) + 1;
+        });
+        diagnostic.duplicateIdentifiers = Object.entries(counts)
+          .filter(([, count]) => count > 1)
+          .map(([identifier]) => identifier);
+
+        const fields = ["title", "creators", "datestamp", "date", "identifier", "description", "publisher", "language"];
+        const possible = Math.max(1, records.length * fields.length);
+        const filled = records.reduce((total, record) => total + fields.filter((field) => record[field]).length, 0);
+        diagnostic.completenessPercent = records.length ? Math.round((filled / possible) * 1000) / 10 : 0;
+
+        diagnostic.problemRecords = records
+          .map((record) => ({ record, problems: recordProblems(record, diagnostic.duplicateIdentifiers) }))
+          .filter((item) => item.problems.length)
+          .map((item) => ({
+            identifier: item.record.identifier,
+            title: item.record.title,
+            datestamp: item.record.datestamp,
+            problems: item.problems.join("; "),
+          }));
+        return diagnostic;
+      }
+
+      function emptyDiagnostic() {
+        return {
+          totalRecords: 0,
+          activeRecords: 0,
+          deletedRecords: 0,
+          withTitle: 0,
+          withCreator: 0,
+          withDatestamp: 0,
+          withDate: 0,
+          withIdentifier: 0,
+          withDescription: 0,
+          withPublisher: 0,
+          withLanguage: 0,
+          completenessPercent: 0,
+          duplicateIdentifiers: [],
+          problemRecords: [],
+        };
+      }
+
+      function recordProblems(record, duplicates) {
+        const problems = [];
+        if (!record.title) problems.push("tanpa title");
+        else if (record.title.length < 5) problems.push("title terlalu pendek");
+        if (!record.creators) problems.push("tanpa creator");
+        else if (record.creators.length < 3) problems.push("creator terlalu pendek");
+        if (!record.date) problems.push("tanpa date");
+        else if (!dateLooksReasonable(record.date)) problems.push("date bukan format tanggal yang wajar");
+        if (!record.description) problems.push("tanpa description");
+        if (!record.datestamp) problems.push("datestamp kosong");
+        if (record.deleted) problems.push("status deleted");
+        if (duplicates.includes(record.identifier)) problems.push("identifier duplikat");
+        if (record.language && !languageLooksReasonable(record.language)) problems.push("language tidak jelas");
+        if (record.relation && record.relation.toLowerCase().includes("doi") && !/10\.\d{4,9}\/\S+/.test(record.relation)) {
+          problems.push("DOI atau relation tampak tidak valid");
+        }
+        return problems;
+      }
+
+      function generateRecommendations(audit) {
+        const issues = [];
+        if (!audit.selectedEndpoint) {
+          issues.push(issue("endpoint_not_found", "Critical", "Endpoint OAI-PMH tidak menghasilkan Identify yang valid.", "P1", "Pengelola Jurnal dan Tim IT", [
+            "OAI belum aktif.",
+            "Path jurnal salah.",
+            "Konfigurasi pretty URL atau routing OJS bermasalah.",
+          ], [
+            "Pastikan URL yang dimasukkan adalah URL jurnal, bukan URL portal induk.",
+            "Pastikan jurnal sudah memiliki issue dan artikel yang dipublikasikan.",
+            "Kirim contoh URL jurnal dan hasil error ke tim IT.",
+          ], [
+            "Periksa konfigurasi OAI pada OJS.",
+            "Pastikan routing /oai dapat diakses publik.",
+            "Periksa rewrite URL, base_url, dan log PHP/web server.",
+          ], "Harvester tidak punya alamat valid untuk menarik metadata."));
+        }
+
+        for (const response of audit.requestLog) {
+          if (response.errorType === "http_403") {
+            issues.push(issue("http_403_forbidden", "Critical", "Endpoint mengembalikan 403 Forbidden.", "P1", "Tim IT atau Admin Server", [
+              "Firewall, WAF, Cloudflare, ModSecurity, atau rate limit memblokir request.",
+            ], [
+              "Laporkan ke tim IT bahwa endpoint OAI ditolak publik.",
+              "Berikan URL endpoint dan waktu pengecekan.",
+            ], [
+              "Izinkan akses publik ke endpoint OAI.",
+              "Pastikan request GET ke /oai tidak diblokir.",
+            ], "Harvester ditolak server."));
+          }
+          if (response.errorType === "http_500") {
+            issues.push(issue("http_500_server_error", "Critical", "Endpoint mengembalikan 500 Internal Server Error.", "P1", "Tim IT atau Admin Server", [
+              "Error PHP, plugin OJS bermasalah, database error, atau versi PHP tidak sesuai.",
+            ], [
+              "Laporkan sebagai error server kepada tim IT.",
+            ], [
+              "Periksa error_log PHP dan log web server.",
+              "Periksa kompatibilitas versi OJS, PHP, dan plugin.",
+            ], "Harvester gagal total."));
+          }
+          if (response.errorType === "xml_parse_error") {
+            issues.push(issue("invalid_xml", "Critical", "Respons XML tidak valid.", "P1", "Pengelola Jurnal dan Tim IT", [
+              "Warning PHP tampil sebelum XML, karakter ilegal XML, atau encoding tidak UTF-8.",
+            ], [
+              "Periksa metadata artikel terbaru, terutama judul, abstrak, keyword, dan nama penulis.",
+            ], [
+              "Matikan display_errors di production.",
+              "Simpan error ke log, bukan ke output.",
+            ], "Harvester gagal membaca record."));
+          }
+          if (response.errorType === "html_response") {
+            issues.push(issue("non_xml_response", "Critical", "Endpoint mengembalikan HTML, bukan XML.", "P1", "Tim IT atau Admin Server", [
+              "Endpoint salah, redirect ke halaman utama, atau routing OAI tidak aktif.",
+            ], [
+              "Gunakan endpoint yang direkomendasikan aplikasi.",
+            ], [
+              "Periksa redirect, base_url, dan rewrite URL.",
+              "Pastikan endpoint OAI menghasilkan XML.",
+            ], "Harvester gagal parse metadata."));
+          }
+          if (response.errorType === "timeout") {
+            issues.push(issue("timeout_or_slow", "High", "Request timeout atau server sangat lambat.", "P2", "Tim IT atau Admin Server", [
+              "oai_max_records terlalu besar, query database lambat, atau resource hosting terbatas.",
+            ], [
+              "Laporkan endpoint lambat kepada tim IT.",
+            ], [
+              "Turunkan oai_max_records.",
+              "Periksa performa database, cache OJS, memory_limit, dan max_execution_time.",
+            ], "Harvester gagal atau hanya menarik sebagian data."));
+          }
+          if (response.errorType === "connection_error") {
+            issues.push(issue("cors_or_connection", "High", "Browser tidak bisa membaca respons endpoint.", "P2", "Tim IT atau Admin Server", [
+              "Server tidak mengizinkan akses lintas origin dari GitHub Pages atau koneksi gagal.",
+            ], [
+              "Coba jalankan versi lokal/Streamlit jika audit dari browser diblokir CORS.",
+            ], [
+              "Izinkan header CORS yang sesuai untuk endpoint OAI jika ingin diperiksa dari GitHub Pages.",
+              "Pastikan endpoint bisa diakses publik.",
+            ], "Aplikasi GitHub Pages tidak bisa menampilkan hasil walaupun endpoint mungkin aktif."));
+          }
+        }
+
+        if (audit.selectedEndpoint && !audit.metadataFormats.some((format) => format.metadataPrefix === "oai_dc")) {
+          issues.push(issue("oai_dc_missing", "High", "ListMetadataFormats tidak menampilkan metadataPrefix oai_dc.", "P1", "Tim IT atau Admin Server", [
+            "Metadata format tidak aktif atau plugin metadata bermasalah.",
+          ], [
+            "Laporkan bahwa Dublin Core tidak tersedia.",
+          ], [
+            "Periksa plugin metadata OAI dan pastikan format oai_dc aktif.",
+          ], "Banyak harvester dasar tidak bisa menarik data."));
+        }
+
+        if (audit.noRecordsMatch) {
+          issues.push(issue("no_records_match", "High", "OAI-PMH aktif, tetapi tidak ada record yang cocok untuk metadataPrefix ini.", "P2", "Pengelola Jurnal dan Tim IT", [
+            "Belum ada artikel published, issue belum published, atau metadataPrefix salah.",
+          ], [
+            "Pastikan issue dan artikel sudah dipublikasikan.",
+            "Periksa tanggal publikasi artikel.",
+          ], [
+            "Periksa apakah OAI membaca data artikel published dan cache OJS.",
+          ], "Harvester tidak menemukan publikasi."));
+        }
+
+        if (audit.tokenError) {
+          issues.push(issue("resumption_token_problem", "High", audit.tokenError, "P2", "Tim IT atau Admin Server", [
+            "Bug OJS/plugin, cache bermasalah, atau konfigurasi oai_max_records tidak stabil.",
+          ], [
+            "Cocokkan jumlah artikel di OJS dengan jumlah record OAI.",
+          ], [
+            "Periksa cache, versi OJS, plugin, dan konfigurasi oai_max_records.",
+          ], "Harvester hanya menarik sebagian publikasi."));
+        }
+
+        if (audit.records.length && audit.diagnostic.completenessPercent < 80) {
+          issues.push(issue("metadata_incomplete", "Medium", "Banyak metadata utama kosong.", "P3", "Pengelola Jurnal", [
+            "Metadata artikel tidak lengkap di OJS atau data migrasi kosong.",
+          ], [
+            "Lengkapi title, author, abstract, keyword, date, DOI, pages, language.",
+            "Periksa issue terbaru dan dua issue terakhir lebih dahulu.",
+          ], [
+            "Jika data lama hasil migrasi kosong massal, bantu ekspor dan audit database.",
+          ], "Portal indeks bisa menampilkan artikel secara salah atau tidak lengkap."));
+        }
+
+        if (audit.diagnostic.duplicateIdentifiers.length) {
+          issues.push(issue("duplicate_identifier", "High", "Ada OAI identifier sama pada lebih dari satu record.", "P2", "Pengelola Jurnal dan Tim IT", [
+            "Migrasi data bermasalah, repository_id berubah, atau data artikel duplikat.",
+          ], [
+            "Periksa apakah ada artikel ganda.",
+          ], [
+            "Periksa repository_id, struktur identifier OAI, dan duplikasi submission/publication.",
+          ], "Harvester bisa menimpa, mengabaikan, atau salah menduplikasi record."));
+        }
+
+        return dedupeIssues(issues);
+      }
+
+      function issue(issueId, severity, symptom, priority, owner, causes, managerActions, itActions, impact) {
+        return {
+          issueId,
+          category: "",
+          severity,
+          symptom,
+          probableCauses: causes,
+          impactForHarvester: impact,
+          actionForJournalManager: managerActions,
+          actionForItAdmin: itActions,
+          validationSteps: ["Jalankan ulang pemeriksaan dan pastikan respons OAI-PMH valid."],
+          owner,
+          priority,
+        };
+      }
+
+      function dedupeIssues(issues) {
+        const map = new Map();
+        issues.forEach((item) => {
+          if (!map.has(item.issueId)) map.set(item.issueId, item);
+        });
+        const priorityOrder = { P1: 1, P2: 2, P3: 3 };
+        const severityOrder = { Critical: 1, High: 2, Medium: 3, Low: 4 };
+        return Array.from(map.values()).sort(
+          (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority] || severityOrder[a.severity] - severityOrder[b.severity],
+        );
+      }
+
+      function computeHarvestabilityScore(audit) {
+        let score = 0;
+        if (audit.selectedEndpoint) score += 25;
+        if (audit.metadataFormats.some((format) => format.metadataPrefix === "oai_dc")) score += 15;
+        if (audit.listRecordsSucceeded) score += 25;
+        if (audit.records.length) score += 15;
+        if (audit.diagnostic.completenessPercent >= 80) score += 10;
+        if (!audit.tokenError) score += 5;
+        if (!audit.issues.some((item) => item.severity === "Critical")) score += 5;
+        return Math.min(100, score);
+      }
+
+      function classifyHarvestability(score, issues) {
+        if (issues.some((item) => item.severity === "Critical") && score < 65) return "Kemungkinan besar gagal di-harvest";
+        if (score >= 85) return "Siap di-harvest";
+        if (score >= 65) return "Bisa di-harvest, tetapi perlu perbaikan";
+        if (score >= 40) return "Berisiko gagal atau hanya tertarik sebagian";
+        return "Kemungkinan besar gagal di-harvest";
+      }
+
+      function renderAudit(audit, settings) {
+        renderSummary(audit);
+        renderEndpoints(audit);
+        renderRepository(audit);
+        renderFormats(audit);
+        renderRecords(audit);
+        renderQuality(audit);
+        renderIssues(audit);
+        renderTechnical(audit, settings);
+      }
+
+      function renderSummary(audit) {
+        const counts = countIssues(audit.issues);
+        const last = audit.requestLog[audit.requestLog.length - 1] || {};
+        const statusClass = audit.harvestabilityScore >= 85 ? "status-good" : audit.harvestabilityScore >= 40 ? "status-warning" : "status-danger";
+        document.getElementById("summary").innerHTML = `
+          <h2>Ringkasan</h2>
+          <p>Harvestability score adalah perkiraan kesiapan endpoint untuk dipanen oleh sistem pengindeks.</p>
+          <div class="metrics">
+            ${metric("Status akhir", escapeHtml(audit.harvestabilityStatus), statusClass)}
+            ${metric("Harvestability score", `${audit.harvestabilityScore}/100`, statusClass)}
+            ${metric("Record ditemukan", String(audit.records.length))}
+            ${metric("HTTP status terakhir", String(last.httpStatus || "-"))}
+          </div>
+          <p><strong>Endpoint OAI-PMH terpilih:</strong> <code>${escapeHtml(audit.selectedEndpoint || "-")}</code></p>
+          <p><strong>Metadata prefix dipakai:</strong> <code>${escapeHtml(audit.metadataPrefix)}</code></p>
+          <p><strong>Waktu pemeriksaan:</strong> <code>${escapeHtml(audit.checkedAt)}</code></p>
+          <div class="metrics">
+            ${metric("Critical", String(counts.Critical), "status-danger")}
+            ${metric("High", String(counts.High), "status-warning")}
+            ${metric("Medium", String(counts.Medium))}
+            ${metric("Low", String(counts.Low))}
+          </div>
+          <div class="download-row">
+            <button type="button" onclick="downloadRecordsCsv()">Download publikasi CSV</button>
+            <button type="button" onclick="downloadAuditJson()">Download audit JSON</button>
+            <button type="button" onclick="downloadIssuesCsv()">Download rekomendasi CSV</button>
+            <button type="button" onclick="downloadSummaryMarkdown()">Download ringkasan Markdown</button>
+            <button type="button" onclick="downloadSummaryTxt()">Download laporan TXT</button>
+          </div>
+        `;
+      }
+
+      function renderEndpoints(audit) {
+        renderTable("endpoints", ["kandidat endpoint", "status", "alasan", "waktu respons", "HTTP status", "dipilih"], audit.endpointAttempts.map((attempt) => [
+          attempt.endpointUrl,
+          attempt.status,
+          attempt.reason,
+          attempt.responseTimeSeconds ?? "",
+          attempt.httpStatus ?? "",
+          attempt.selected ? "Ya" : "Tidak",
+        ]));
+      }
+
+      function renderRepository(audit) {
+        if (!audit.repositoryInfo) {
+          document.getElementById("repository").innerHTML = `<h2>Informasi Repository</h2><div class="empty">Informasi repository belum tersedia karena Identify tidak valid.</div>`;
+          return;
+        }
+        const info = audit.repositoryInfo;
+        renderTable("repository", ["Field", "Nilai"], [
+          ["repositoryName", info.repositoryName],
+          ["baseURL", info.baseURL],
+          ["protocolVersion", info.protocolVersion],
+          ["adminEmail", info.adminEmail.join("; ")],
+          ["earliestDatestamp", info.earliestDatestamp],
+          ["deletedRecord", info.deletedRecord],
+          ["granularity", info.granularity],
+        ], "Informasi Repository");
+      }
+
+      function renderFormats(audit) {
+        const prefixStatus = audit.metadataFormats.some((item) => item.metadataPrefix === "oai_dc")
+          ? `<p class="status-good"><strong>Format oai_dc tersedia.</strong></p>`
+          : `<p class="status-warning"><strong>Format oai_dc tidak ditemukan atau metadata format belum bisa dibaca.</strong></p>`;
+        renderTable("formats", ["metadataPrefix", "schema", "metadataNamespace"], audit.metadataFormats.map((item) => [
+          item.metadataPrefix,
+          item.schema,
+          item.metadataNamespace,
+        ]), "Metadata Format", prefixStatus);
+      }
+
+      function renderRecords(audit) {
+        const note = audit.noRecordsMatch ? `<p class="status-warning"><strong>OAI-PMH aktif, tetapi tidak ada record yang cocok untuk metadataPrefix ini.</strong></p>` : "";
+        renderTable("records", ["No", "OAI Identifier", "Datestamp", "Judul", "Penulis", "Tanggal", "Publisher", "Bahasa", "Tipe", "Source", "Rights", "SetSpec"], audit.records.map((record, index) => [
+          index + 1,
+          record.identifier,
+          record.datestamp,
+          record.title,
+          record.creators,
+          record.date,
+          record.publisher,
+          record.language,
+          record.type,
+          record.source,
+          record.rights,
+          record.setSpecs.join("; "),
+        ]), "Publikasi yang Bisa Ditarik Harvester", note);
+      }
+
+      function renderQuality(audit) {
+        const diagnostic = audit.diagnostic;
+        const total = Math.max(1, diagnostic.totalRecords);
+        const problemTable = tableHtml(["identifier", "title", "datestamp", "problems"], diagnostic.problemRecords.map((item) => [
+          item.identifier,
+          item.title,
+          item.datestamp,
+          item.problems,
+        ]));
+        document.getElementById("quality").innerHTML = `
+          <h2>Kualitas Metadata</h2>
+          <div class="metrics">
+            ${metric("% record dengan judul", percent(diagnostic.withTitle, total))}
+            ${metric("% record dengan penulis", percent(diagnostic.withCreator, total))}
+            ${metric("% record dengan tanggal", percent(diagnostic.withDate, total))}
+            ${metric("% record dengan deskripsi", percent(diagnostic.withDescription, total))}
+            ${metric("% record dengan publisher", percent(diagnostic.withPublisher, total))}
+            ${metric("% record dengan bahasa", percent(diagnostic.withLanguage, total))}
+            ${metric("Identifier duplikat", String(diagnostic.duplicateIdentifiers.length))}
+            ${metric("Record deleted", String(diagnostic.deletedRecords))}
+          </div>
+          <h3>Record bermasalah</h3>
+          ${diagnostic.problemRecords.length ? problemTable : `<div class="empty">Tidak ada masalah metadata utama pada record yang ditampilkan.</div>`}
+        `;
+      }
+
+      function renderIssues(audit) {
+        renderTable("issues", ["Prioritas", "Tingkat masalah", "Gejala", "Dugaan penyebab", "Dampak bagi harvester", "Action untuk pengelola jurnal", "Action untuk tim IT", "Cara validasi", "Penanggung jawab"], audit.issues.map((item) => [
+          item.priority,
+          item.severity,
+          item.symptom,
+          item.probableCauses.join("\n"),
+          item.impactForHarvester,
+          item.actionForJournalManager.join("\n"),
+          item.actionForItAdmin.join("\n"),
+          item.validationSteps.join("\n"),
+          item.owner,
+        ]), "Rekomendasi Action", `<p>Rekomendasi action membedakan pekerjaan editorial dan pekerjaan server agar masalah bisa ditangani oleh pihak yang tepat.</p>`);
+      }
+
+      function renderTechnical(audit, settings) {
+        if (!settings.technicalDetail) {
+          document.getElementById("technical").innerHTML = `<h2>Detail Teknis</h2><div class="empty">Aktifkan checkbox Tampilkan detail teknis di sidebar untuk melihat request dan error teknis.</div>`;
+          return;
+        }
+        const rows = audit.requestLog.map((item) => [
+          item.requestUrl,
+          item.httpStatus ?? "",
+          item.responseTimeSeconds ?? "",
+          item.contentType,
+          item.errorMessage || item.oaiErrorMessage || "",
+        ]);
+        const snippets = audit.requestLog
+          .filter((item) => item.snippet)
+          .map((item, index) => `<h3>Potongan respons ${index + 1}</h3><pre>${escapeHtml(item.snippet)}</pre>`)
+          .join("");
+        document.getElementById("technical").innerHTML = `
+          <h2>Detail Teknis</h2>
+          ${tableHtml(["URL request", "HTTP status", "response time", "content type", "error"], rows)}
+          ${snippets}
+        `;
+      }
+
+      function renderTable(targetId, headers, rows, title = "", intro = "") {
+        const heading = title ? `<h2>${escapeHtml(title)}</h2>` : "";
+        const content = rows.length ? tableHtml(headers, rows) : `<div class="empty">Data belum tersedia.</div>`;
+        document.getElementById(targetId).innerHTML = `${heading}${intro}${content}`;
+      }
+
+      function tableHtml(headers, rows) {
+        return `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(String(cell ?? "")).replaceAll("\n", "<br>")}</td>`).join("")}</tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function metric(label, value, className = "") {
+        return `<div class="metric"><span>${escapeHtml(label)}</span><strong class="${className}">${value}</strong></div>`;
+      }
+
+      function countIssues(issues) {
+        return issues.reduce((counts, item) => {
+          counts[item.severity] = (counts[item.severity] || 0) + 1;
+          return counts;
+        }, { Critical: 0, High: 0, Medium: 0, Low: 0 });
+      }
+
+      function recordsRows() {
+        return state.audit.records.map((record, index) => ({
+          No: index + 1,
+          "OAI Identifier": record.identifier,
+          Datestamp: record.datestamp,
+          Judul: record.title,
+          Penulis: record.creators,
+          Tanggal: record.date,
+          Publisher: record.publisher,
+          Bahasa: record.language,
+          Tipe: record.type,
+          Source: record.source,
+          Rights: record.rights,
+          SetSpec: record.setSpecs.join("; "),
+        }));
+      }
+
+      function issueRows() {
+        return state.audit.issues.map((item) => ({
+          Prioritas: item.priority,
+          "Tingkat masalah": item.severity,
+          Gejala: item.symptom,
+          "Dugaan penyebab": item.probableCauses.join("; "),
+          "Dampak bagi harvester": item.impactForHarvester,
+          "Action untuk pengelola jurnal": item.actionForJournalManager.join("; "),
+          "Action untuk tim IT": item.actionForItAdmin.join("; "),
+          "Cara validasi": item.validationSteps.join("; "),
+          "Penanggung jawab": item.owner,
+        }));
+      }
+
+      function downloadRecordsCsv() {
+        downloadText("publikasi_oai_pmh.csv", toCsv(recordsRows()), "text/csv;charset=utf-8");
+      }
+
+      function downloadIssuesCsv() {
+        downloadText("rekomendasi_oai_pmh.csv", toCsv(issueRows()), "text/csv;charset=utf-8");
+      }
+
+      function downloadAuditJson() {
+        downloadText("audit_oai_pmh.json", JSON.stringify(state.audit, null, 2), "application/json;charset=utf-8");
+      }
+
+      function downloadSummaryMarkdown() {
+        downloadText("ringkasan_oai_pmh.md", summaryMarkdown(), "text/markdown;charset=utf-8");
+      }
+
+      function downloadSummaryTxt() {
+        downloadText("laporan_oai_pmh.txt", summaryMarkdown().replaceAll("#", ""), "text/plain;charset=utf-8");
+      }
+
+      function summaryMarkdown() {
+        const audit = state.audit;
+        return [
+          "# Ringkasan Audit OAI-PMH",
+          "",
+          `- URL input: ${audit.inputUrl}`,
+          `- Endpoint terpilih: ${audit.selectedEndpoint || "-"}`,
+          `- Metadata prefix: ${audit.metadataPrefix}`,
+          `- Status: ${audit.harvestabilityStatus}`,
+          `- Harvestability score: ${audit.harvestabilityScore}/100`,
+          `- Jumlah record: ${audit.records.length}`,
+          `- Waktu pemeriksaan: ${audit.checkedAt}`,
+          "",
+          "## Rekomendasi",
+          ...audit.issues.map((item) => `- [${item.priority}] ${item.symptom}`),
+        ].join("\n");
+      }
+
+      function toCsv(rows) {
+        if (!rows.length) return "\ufeff";
+        const headers = Object.keys(rows[0]);
+        const lines = [headers.join(",")];
+        rows.forEach((row) => {
+          lines.push(headers.map((header) => csvCell(row[header])).join(","));
+        });
+        return `\ufeff${lines.join("\n")}`;
+      }
+
+      function csvCell(value) {
+        const text = String(value ?? "");
+        return `"${text.replaceAll('"', '""')}"`;
+      }
+
+      function downloadText(filename, text, mimeType) {
+        const blob = new Blob([text], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function localName(element) {
+        return element?.localName || "";
+      }
+
+      function cleanText(text) {
+        return String(text || "").replace(/\s+/g, " ").trim();
+      }
+
+      function isBlockedContentType(contentType) {
+        const lower = contentType.toLowerCase();
+        return lower.includes("application/pdf") || lower.includes("application/zip") || lower.includes("image/") || lower.includes("audio/") || lower.includes("video/");
+      }
+
+      function looksLikeLargeFile(urlText) {
+        return /\.(pdf|zip|jpg|jpeg|png|gif|webp|mp4|mp3)$/i.test(new URL(urlText).pathname);
+      }
+
+      function isHtmlResponse(contentType, text) {
+        const lowerType = contentType.toLowerCase();
+        const trimmed = text.trim().slice(0, 80).toLowerCase();
+        return lowerType.includes("html") || trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html");
+      }
+
+      function dateLooksReasonable(value) {
+        return /\b(18\d{2}|19\d{2}|20\d{2}|2100)\b/.test(value);
+      }
+
+      function languageLooksReasonable(value) {
+        return value
+          .split(/[;|,]/)
+          .map((item) => item.trim().toLowerCase())
+          .filter(Boolean)
+          .every((item) => /^[a-z]{2,3}(-[a-z]{2})?$/.test(item));
+      }
+
+      function percent(value, total) {
+        return `${Math.round((value / total) * 1000) / 10}%`;
+      }
+
+      function clampNumber(value, min, max, fallback) {
+        const number = Number.parseInt(value, 10);
+        if (Number.isNaN(number)) return fallback;
+        return Math.max(min, Math.min(max, number));
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+    </script>
   </body>
 </html>
