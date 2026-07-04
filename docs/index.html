@@ -180,6 +180,12 @@
         font-size: 14px;
       }
 
+      .setting-help {
+        margin: -8px 0 15px 28px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
       .tabs {
         display: flex;
         flex-wrap: wrap;
@@ -370,6 +376,13 @@
             <input id="technicalDetail" type="checkbox" />
             <label for="technicalDetail">Tampilkan detail teknis</label>
           </div>
+          <div class="setting checkbox-row">
+            <input id="corsProxy" type="checkbox" checked />
+            <label for="corsProxy">Gunakan proxy CORS publik untuk GitHub Pages</label>
+          </div>
+          <p class="setting-help">
+            Dipakai agar browser bisa membaca XML dari endpoint yang tidak mengirim header CORS.
+          </p>
         </section>
       </aside>
 
@@ -382,7 +395,8 @@
         </p>
         <div class="note">
           Aplikasi ini berjalan langsung di GitHub Pages dan hanya membaca metadata publik dari endpoint OAI-PMH.
-          Tidak membutuhkan login ke OJS.
+          Tidak membutuhkan login ke OJS. Versi GitHub Pages dapat memakai proxy CORS publik agar browser bisa
+          membaca XML OAI-PMH dari server jurnal.
         </div>
 
         <section class="panel">
@@ -487,6 +501,7 @@
           followTokens: document.getElementById("followTokens").checked,
           maxTokenPages: clampNumber(document.getElementById("maxTokenPages").value, 1, 20, 5),
           technicalDetail: document.getElementById("technicalDetail").checked,
+          useCorsProxy: document.getElementById("corsProxy").checked,
         };
       }
 
@@ -570,7 +585,9 @@
           endpointUrl: endpoint,
           status: response.ok ? "Diuji" : "Gagal",
           reason: response.ok
-            ? "HTTP 200, menunggu validasi XML Identify."
+            ? response.viaProxy
+              ? "Respons dibaca via proxy CORS, menunggu validasi XML Identify."
+              : "HTTP 200, menunggu validasi XML Identify."
             : response.errorMessage || "Identify tidak valid.",
           httpStatus: response.httpStatus,
           responseTimeSeconds: response.responseTimeSeconds,
@@ -579,6 +596,8 @@
           errorType: response.errorType,
           finalUrl: response.finalUrl,
           requestUrl: response.requestUrl,
+          viaProxy: response.viaProxy,
+          proxyUrl: response.proxyUrl,
         };
       }
 
@@ -653,12 +672,51 @@
 
       async function requestOai(endpoint, params, settings) {
         const requestUrl = safeJoinQuery(endpoint, params);
+        if (settings.useCorsProxy) {
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(requestUrl)}`;
+          const proxiedResponse = await fetchOaiUrl({
+            endpoint,
+            requestUrl,
+            fetchUrl: proxyUrl,
+            settings,
+            viaProxy: true,
+            proxyUrl,
+          });
+          if (proxiedResponse.ok || !["proxy_error", "timeout"].includes(proxiedResponse.errorType)) {
+            return proxiedResponse;
+          }
+
+          const directResponse = await fetchOaiUrl({
+            endpoint,
+            requestUrl,
+            fetchUrl: requestUrl,
+            settings,
+            viaProxy: false,
+          });
+          directResponse.proxyUrl = proxyUrl;
+          directResponse.fallbackNote = `Proxy CORS gagal: ${proxiedResponse.errorMessage}`;
+          return directResponse;
+        }
+
+        return fetchOaiUrl({
+          endpoint,
+          requestUrl,
+          fetchUrl: requestUrl,
+          settings,
+          viaProxy: false,
+        });
+      }
+
+      async function fetchOaiUrl({ endpoint, requestUrl, fetchUrl, settings, viaProxy, proxyUrl = "" }) {
         const startedAt = performance.now();
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), settings.timeout * 1000);
         const responseData = {
           requestUrl,
           endpointUrl: endpoint,
+          fetchUrl,
+          viaProxy,
+          proxyUrl,
           ok: false,
           httpStatus: null,
           contentType: "",
@@ -668,12 +726,15 @@
           errorMessage: "",
           oaiErrorCode: "",
           oaiErrorMessage: "",
+          directErrorType: "",
+          directErrorMessage: "",
+          fallbackNote: "",
           text: "",
           snippet: "",
         };
 
         try {
-          const response = await fetch(requestUrl, {
+          const response = await fetch(fetchUrl, {
             method: "GET",
             redirect: "follow",
             signal: controller.signal,
@@ -681,9 +742,9 @@
           });
           responseData.httpStatus = response.status;
           responseData.contentType = response.headers.get("content-type") || "";
-          responseData.finalUrl = response.url;
+          responseData.finalUrl = viaProxy ? requestUrl : response.url;
 
-          if (isBlockedContentType(responseData.contentType) || looksLikeLargeFile(response.url)) {
+          if (!viaProxy && (isBlockedContentType(responseData.contentType) || looksLikeLargeFile(response.url))) {
             responseData.errorType = "blocked_content_type";
             responseData.errorMessage = "Respons tampak seperti file besar atau bukan XML OAI-PMH.";
             return finishResponse(responseData, startedAt);
@@ -709,15 +770,19 @@
             responseData.errorMessage = "Respons HTML, bukan XML.";
           } else {
             responseData.ok = true;
+            if (viaProxy) responseData.contentType = `${responseData.contentType || "text/xml"} (via proxy CORS)`;
           }
         } catch (error) {
           if (error.name === "AbortError") {
             responseData.errorType = "timeout";
-            responseData.errorMessage = "Request timeout. Server terlalu lama merespons.";
+            responseData.errorMessage = viaProxy
+              ? "Proxy CORS timeout. Server atau proxy terlalu lama merespons."
+              : "Request timeout. Server terlalu lama merespons.";
           } else {
-            responseData.errorType = "connection_error";
-            responseData.errorMessage =
-              "Koneksi gagal atau diblokir CORS oleh server target. Browser tidak mengizinkan aplikasi GitHub Pages membaca respons tersebut.";
+            responseData.errorType = viaProxy ? "proxy_error" : "connection_error";
+            responseData.errorMessage = viaProxy
+              ? "Proxy CORS gagal membaca endpoint OAI-PMH."
+              : "Koneksi gagal atau diblokir CORS oleh server target. Browser tidak mengizinkan aplikasi GitHub Pages membaca respons tersebut.";
           }
         } finally {
           window.clearTimeout(timeoutId);
@@ -1090,11 +1155,11 @@
               "Periksa performa database, cache OJS, memory_limit, dan max_execution_time.",
             ], "Harvester gagal atau hanya menarik sebagian data."));
           }
-          if (response.errorType === "connection_error") {
+          if (response.errorType === "connection_error" || response.errorType === "proxy_error") {
             issues.push(issue("cors_or_connection", "High", "Browser tidak bisa membaca respons endpoint.", "P2", "Tim IT atau Admin Server", [
-              "Server tidak mengizinkan akses lintas origin dari GitHub Pages atau koneksi gagal.",
+              "Server tidak mengizinkan akses lintas origin dari GitHub Pages, proxy CORS gagal, atau koneksi gagal.",
             ], [
-              "Coba jalankan versi lokal/Streamlit jika audit dari browser diblokir CORS.",
+              "Coba jalankan versi lokal/Streamlit jika audit dari browser tetap diblokir.",
             ], [
               "Izinkan header CORS yang sesuai untuk endpoint OAI jika ingin diperiksa dari GitHub Pages.",
               "Pastikan endpoint bisa diakses publik.",
@@ -1352,9 +1417,12 @@
         }
         const rows = audit.requestLog.map((item) => [
           item.requestUrl,
+          item.viaProxy ? "Proxy CORS" : "Browser langsung",
           item.httpStatus ?? "",
           item.responseTimeSeconds ?? "",
           item.contentType,
+          item.fallbackNote || item.directErrorMessage || "",
+          item.proxyUrl || "",
           item.errorMessage || item.oaiErrorMessage || "",
         ]);
         const snippets = audit.requestLog
@@ -1363,7 +1431,7 @@
           .join("");
         document.getElementById("technical").innerHTML = `
           <h2>Detail Teknis</h2>
-          ${tableHtml(["URL request", "HTTP status", "response time", "content type", "error"], rows)}
+          ${tableHtml(["URL request", "mode baca", "HTTP status", "response time", "content type", "catatan fallback", "proxy URL", "error"], rows)}
           ${snippets}
         `;
       }
