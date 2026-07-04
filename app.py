@@ -17,7 +17,7 @@ from src.models import AppSettings, AuditResult
 
 
 st.set_page_config(
-    page_title="Pemeriksa OAI-PMH Jurnal OJS",
+    page_title="Validator OAI-PMH Jurnal OJS",
     layout="wide",
 )
 
@@ -40,7 +40,7 @@ def main() -> None:
 
 
 def _render_header() -> None:
-    st.title("Pemeriksa OAI-PMH Jurnal OJS")
+    st.title("Validator OAI-PMH Jurnal OJS")
     st.write(
         "Masukkan URL website jurnal. Aplikasi akan mencoba menemukan endpoint OAI-PMH, "
         "memeriksa validitasnya, menampilkan metadata publikasi yang tersedia, dan memberi "

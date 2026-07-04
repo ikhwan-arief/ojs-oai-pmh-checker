@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
-  <title id="title">Preview aplikasi Pemeriksa OAI-PMH Jurnal OJS</title>
+  <title id="title">Preview aplikasi Validator OAI-PMH Jurnal OJS</title>
   <desc id="desc">Preview antarmuka Streamlit untuk audit endpoint OAI-PMH jurnal OJS.</desc>
   <rect width="1440" height="900" fill="#f7f8fb"/>
   <rect x="0" y="0" width="300" height="900" fill="#ffffff"/>
@@ -16,7 +16,7 @@
   <rect x="34" y="361" width="220" height="42" rx="6" fill="#f3f4f6" stroke="#d1d5db"/>
   <text x="49" y="388" font-family="Arial, sans-serif" font-size="14" fill="#374151">metadataPrefix: oai_dc</text>
 
-  <text x="350" y="70" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111827">Pemeriksa OAI-PMH Jurnal OJS</text>
+  <text x="350" y="70" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111827">Validator OAI-PMH Jurnal OJS</text>
   <text x="352" y="108" font-family="Arial, sans-serif" font-size="17" fill="#4b5563">Masukkan URL website jurnal untuk menemukan endpoint OAI-PMH, memeriksa validitas,</text>
   <text x="352" y="134" font-family="Arial, sans-serif" font-size="17" fill="#4b5563">menampilkan metadata publikasi, dan memberi rekomendasi perbaikan.</text>
   <rect x="352" y="164" width="980" height="48" rx="8" fill="#ecfdf5" stroke="#a7f3d0"/>

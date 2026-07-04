@@ -20,7 +20,7 @@ URL tersebut menjalankan versi web publik yang bisa dipakai langsung dari browse
 
 ## Screenshot
 
-![Screenshot aplikasi Pemeriksa OAI-PMH Jurnal OJS](docs/screenshot.png)
+![Screenshot aplikasi Validator OAI-PMH Jurnal OJS](docs/screenshot.png)
 
 Screenshot ini diambil dari aplikasi Streamlit yang dijalankan lokal.
 
