@@ -18,7 +18,7 @@ https://ikhwan-arief.github.io/ojs-oai-pmh-checker/
 
 URL tersebut menjalankan versi web publik yang bisa dipakai langsung dari browser.
 
-Catatan: banyak endpoint OAI-PMH tidak mengirim header CORS karena memang dirancang untuk harvester server-side. Versi GitHub Pages menyediakan opsi proxy CORS publik agar XML OAI-PMH tetap bisa dibaca dari browser. Versi Streamlit lokal/Streamlit Cloud tidak membutuhkan proxy ini karena request dilakukan dari sisi server Python.
+Catatan: banyak endpoint OAI-PMH tidak mengirim header CORS karena memang dirancang untuk harvester server-side. Versi GitHub Pages menyediakan opsi proxy CORS publik agar XML OAI-PMH tetap bisa dibaca dari browser, tetapi proxy publik bisa lambat atau tidak stabil. Versi Streamlit lokal/Streamlit Cloud lebih akurat untuk pemeriksaan rutin karena request dilakukan dari sisi server Python.
 
 ## Screenshot
 

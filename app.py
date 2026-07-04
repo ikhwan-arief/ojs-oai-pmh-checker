@@ -31,7 +31,7 @@ def main() -> None:
         with st.spinner("Memeriksa endpoint OAI-PMH dan metadata publik..."):
             try:
                 audit = audit_url(submitted_url, settings)
-            except Exception as exc:
+            except Exception:
                 st.error("Terjadi error saat pemeriksaan. Coba ulangi beberapa saat lagi.")
                 return
         _render_results(audit, settings)

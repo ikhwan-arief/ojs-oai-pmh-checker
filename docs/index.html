@@ -439,8 +439,11 @@
     </div>
 
     <script>
+      const MAX_RESPONSE_BYTES = 5_000_000;
+
       const state = {
         audit: null,
+        requestCache: new Map(),
       };
 
       const OAI_NS = "http://www.openarchives.org/OAI/2.0/";
@@ -672,6 +675,13 @@
 
       async function requestOai(endpoint, params, settings) {
         const requestUrl = safeJoinQuery(endpoint, params);
+        const cacheKey = `${settings.useCorsProxy ? "proxy" : "direct"}|${requestUrl}`;
+        const cachedResponse = state.requestCache.get(cacheKey);
+        if (cachedResponse) {
+          return cachedOaiResponse(cachedResponse);
+        }
+
+        let response;
         if (settings.useCorsProxy) {
           const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(requestUrl)}`;
           const proxiedResponse = await fetchOaiUrl({
@@ -682,29 +692,33 @@
             viaProxy: true,
             proxyUrl,
           });
-          if (proxiedResponse.ok || !["proxy_error", "timeout"].includes(proxiedResponse.errorType)) {
-            return proxiedResponse;
-          }
-
-          const directResponse = await fetchOaiUrl({
+          response = proxiedResponse;
+        } else {
+          response = await fetchOaiUrl({
             endpoint,
             requestUrl,
             fetchUrl: requestUrl,
             settings,
             viaProxy: false,
           });
-          directResponse.proxyUrl = proxyUrl;
-          directResponse.fallbackNote = `Proxy CORS gagal: ${proxiedResponse.errorMessage}`;
-          return directResponse;
         }
 
-        return fetchOaiUrl({
-          endpoint,
-          requestUrl,
-          fetchUrl: requestUrl,
-          settings,
-          viaProxy: false,
-        });
+        if (response.ok) {
+          state.requestCache.set(cacheKey, cloneOaiResponse(response));
+        }
+        return response;
+      }
+
+      function cachedOaiResponse(response) {
+        return {
+          ...cloneOaiResponse(response),
+          fromCache: true,
+          responseTimeSeconds: 0,
+        };
+      }
+
+      function cloneOaiResponse(response) {
+        return { ...response };
       }
 
       async function fetchOaiUrl({ endpoint, requestUrl, fetchUrl, settings, viaProxy, proxyUrl = "" }) {
@@ -717,6 +731,7 @@
           fetchUrl,
           viaProxy,
           proxyUrl,
+          fromCache: false,
           ok: false,
           httpStatus: null,
           contentType: "",
@@ -750,7 +765,7 @@
             return finishResponse(responseData, startedAt);
           }
 
-          const text = await response.text();
+          const text = await readLimitedText(response, MAX_RESPONSE_BYTES);
           responseData.text = text;
           responseData.snippet = text.slice(0, 3000);
           if (response.status === 403) {
@@ -773,7 +788,10 @@
             if (viaProxy) responseData.contentType = `${responseData.contentType || "text/xml"} (via proxy CORS)`;
           }
         } catch (error) {
-          if (error.name === "AbortError") {
+          if (error.name === "ResponseTooLargeError") {
+            responseData.errorType = "response_too_large";
+            responseData.errorMessage = "Ukuran respons terlalu besar untuk diperiksa dengan aman.";
+          } else if (error.name === "AbortError") {
             responseData.errorType = "timeout";
             responseData.errorMessage = viaProxy
               ? "Proxy CORS timeout. Server atau proxy terlalu lama merespons."
@@ -788,6 +806,39 @@
           window.clearTimeout(timeoutId);
         }
         return finishResponse(responseData, startedAt);
+      }
+
+      async function readLimitedText(response, maxBytes) {
+        const contentLength = Number.parseInt(response.headers.get("content-length") || "0", 10);
+        if (contentLength > maxBytes) throw new ResponseTooLargeError();
+        if (!response.body?.getReader) {
+          const text = await response.text();
+          if (new Blob([text]).size > maxBytes) throw new ResponseTooLargeError();
+          return text;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let bytesRead = 0;
+        let text = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          bytesRead += value.byteLength;
+          if (bytesRead > maxBytes) {
+            await reader.cancel();
+            throw new ResponseTooLargeError();
+          }
+          text += decoder.decode(value, { stream: true });
+        }
+        return text + decoder.decode();
+      }
+
+      class ResponseTooLargeError extends Error {
+        constructor() {
+          super("Ukuran respons terlalu besar untuk diperiksa dengan aman.");
+          this.name = "ResponseTooLargeError";
+        }
       }
 
       function finishResponse(responseData, startedAt) {
@@ -1418,6 +1469,7 @@
         const rows = audit.requestLog.map((item) => [
           item.requestUrl,
           item.viaProxy ? "Proxy CORS" : "Browser langsung",
+          item.fromCache ? "Ya" : "Tidak",
           item.httpStatus ?? "",
           item.responseTimeSeconds ?? "",
           item.contentType,
@@ -1431,7 +1483,7 @@
           .join("");
         document.getElementById("technical").innerHTML = `
           <h2>Detail Teknis</h2>
-          ${tableHtml(["URL request", "mode baca", "HTTP status", "response time", "content type", "catatan fallback", "proxy URL", "error"], rows)}
+          ${tableHtml(["URL request", "mode baca", "cache", "HTTP status", "response time", "content type", "catatan fallback", "proxy URL", "error"], rows)}
           ${snippets}
         `;
       }

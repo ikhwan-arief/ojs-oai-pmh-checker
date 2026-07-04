@@ -62,7 +62,7 @@ class OAIClient:
         follow_tokens: bool,
         max_token_pages: int,
     ) -> list[OAIResponse]:
-        from src.parser import get_resumption_token, parse_oai_xml
+        from src.parser import get_resumption_token, parse_oai_xml, parse_records
 
         responses: list[OAIResponse] = []
         seen_tokens: set[str] = set()
@@ -79,7 +79,7 @@ class OAIClient:
             try:
                 root = parse_oai_xml(response.content)
                 token = get_resumption_token(root)
-                record_count += response.content.count(b"<record")
+                record_count += len(parse_records(root))
             except Exception:
                 break
             if not follow_tokens or not token:
