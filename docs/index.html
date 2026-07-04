@@ -565,6 +565,23 @@
         return audit;
       }
 
+      function responseToAttempt(endpoint, response) {
+        return {
+          endpointUrl: endpoint,
+          status: response.ok ? "Diuji" : "Gagal",
+          reason: response.ok
+            ? "HTTP 200, menunggu validasi XML Identify."
+            : response.errorMessage || "Identify tidak valid.",
+          httpStatus: response.httpStatus,
+          responseTimeSeconds: response.responseTimeSeconds,
+          contentType: response.contentType,
+          selected: false,
+          errorType: response.errorType,
+          finalUrl: response.finalUrl,
+          requestUrl: response.requestUrl,
+        };
+      }
+
       async function checkMetadataFormats(audit, settings) {
         const response = await requestOai(audit.selectedEndpoint, { verb: "ListMetadataFormats" }, settings);
         audit.requestLog.push(response);
