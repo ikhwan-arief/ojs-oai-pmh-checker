@@ -5,7 +5,6 @@ import streamlit as st
 
 from src.diagnostics import audit_url
 from src.export_utils import (
-    audit_to_json,
     issues_to_csv_bytes,
     issues_to_dataframe,
     records_to_csv_bytes,
@@ -24,19 +23,31 @@ st.set_page_config(
 
 def main() -> None:
     _render_header()
-    settings = _render_sidebar()
+    _render_sidebar()
     submitted_url = _render_form()
 
     if submitted_url:
+        settings = _default_settings()
         with st.spinner("Memeriksa endpoint OAI-PMH dan metadata publik..."):
             try:
                 audit = audit_url(submitted_url, settings)
             except Exception as exc:
-                st.error("Terjadi error saat pemeriksaan. Coba ulangi atau aktifkan detail teknis.")
-                if settings.show_technical_detail:
-                    st.code(" ".join(str(exc).split())[:1000])
+                st.error("Terjadi error saat pemeriksaan. Coba ulangi beberapa saat lagi.")
                 return
         _render_results(audit, settings)
+
+
+def _default_settings() -> AppSettings:
+    """Return hardcoded default settings; no user input required."""
+    return AppSettings(
+        max_records=50,
+        timeout=15,
+        metadata_prefix="oai_dc",
+        auto_discover=True,
+        follow_resumption_token=True,
+        max_token_pages=5,
+        show_technical_detail=False,
+    )
 
 
 def _render_header() -> None:
@@ -49,7 +60,7 @@ def _render_header() -> None:
     st.info("Aplikasi ini hanya membaca metadata publik dari endpoint OAI-PMH. Tidak membutuhkan login ke OJS.")
 
 
-def _render_sidebar() -> AppSettings:
+def _render_sidebar() -> None:
     with st.sidebar:
         st.header("Panduan singkat")
         st.markdown(
@@ -58,29 +69,10 @@ def _render_sidebar() -> AppSettings:
    `https://jurnal.example.ac.id/index.php/nama-jurnal`
 2. URL boleh berupa endpoint lengkap, contoh:
    `https://jurnal.example.ac.id/index.php/nama-jurnal/oai`
-3. Klik tombol **Periksa OAI-PMH**.
+3. Tekan **Enter** atau klik tombol **Periksa OAI-PMH**.
 4. Lihat status, endpoint yang ditemukan, daftar publikasi, dan rekomendasi perbaikan.
 """
         )
-
-        st.header("Pengaturan lanjutan")
-        max_records = st.number_input("Jumlah record maksimal", min_value=10, max_value=500, value=50, step=10)
-        timeout = st.number_input("Timeout request (detik)", min_value=5, max_value=60, value=15, step=5)
-        metadata_prefix = st.text_input("Metadata prefix", value="oai_dc")
-        auto_discover = st.checkbox("Coba beberapa kandidat endpoint otomatis", value=True)
-        follow_tokens = st.checkbox("Ikuti resumptionToken", value=True)
-        max_token_pages = st.number_input("Jumlah halaman resumptionToken maksimal", min_value=1, max_value=20, value=5)
-        show_detail = st.checkbox("Tampilkan detail teknis", value=False)
-
-    return AppSettings(
-        max_records=int(max_records),
-        timeout=int(timeout),
-        metadata_prefix=metadata_prefix.strip() or "oai_dc",
-        auto_discover=auto_discover,
-        follow_resumption_token=follow_tokens,
-        max_token_pages=int(max_token_pages),
-        show_technical_detail=show_detail,
-    )
 
 
 def _render_form() -> str:
@@ -122,10 +114,7 @@ def _render_results(audit: AuditResult, settings: AppSettings) -> None:
     with tabs[6]:
         _render_recommendations_tab(audit)
     with tabs[7]:
-        if settings.show_technical_detail:
-            _render_technical_tab(audit)
-        else:
-            st.info("Aktifkan checkbox **Tampilkan detail teknis** di sidebar untuk melihat request dan error teknis.")
+        _render_technical_tab(audit)
 
 
 def _render_summary_tab(audit: AuditResult) -> None:
@@ -226,17 +215,73 @@ def _render_records_tab(audit: AuditResult) -> None:
 def _render_quality_tab(audit: AuditResult) -> None:
     diagnostic = audit.diagnostic_result
     total = max(1, diagnostic.total_records)
-    cols = st.columns(4)
-    cols[0].metric("% record dengan judul", _percent(diagnostic.with_title, total))
-    cols[1].metric("% record dengan penulis", _percent(diagnostic.with_creator, total))
-    cols[2].metric("% record dengan tanggal", _percent(diagnostic.with_date, total))
-    cols[3].metric("% record dengan deskripsi", _percent(diagnostic.with_description, total))
+
+    def _pct_value(count: int) -> float:
+        return round((count / total) * 100, 1)
+
+    def _metric_color(count: int, threshold: float = 90.0) -> str | None:
+        """Return delta string to colour the metric red when below threshold."""
+        pct = _pct_value(count)
+        if pct < threshold:
+            # Negative delta forces red colour in Streamlit metrics
+            return f"-{round(threshold - pct, 1)}% di bawah target"
+        return None
 
     cols = st.columns(4)
-    cols[0].metric("% record dengan publisher", _percent(diagnostic.with_publisher, total))
-    cols[1].metric("% record dengan bahasa", _percent(diagnostic.with_language, total))
-    cols[2].metric("Identifier duplikat", len(diagnostic.duplicate_identifiers))
-    cols[3].metric("Record deleted", diagnostic.deleted_records)
+    cols[0].metric(
+        "% record dengan judul",
+        _percent(diagnostic.with_title, total),
+        delta=_metric_color(diagnostic.with_title),
+        delta_color="inverse",
+    )
+    cols[1].metric(
+        "% record dengan penulis",
+        _percent(diagnostic.with_creator, total),
+        delta=_metric_color(diagnostic.with_creator),
+        delta_color="inverse",
+    )
+    cols[2].metric(
+        "% record dengan tanggal",
+        _percent(diagnostic.with_date, total),
+        delta=_metric_color(diagnostic.with_date),
+        delta_color="inverse",
+    )
+    cols[3].metric(
+        "% record dengan deskripsi",
+        _percent(diagnostic.with_description, total),
+        delta=_metric_color(diagnostic.with_description),
+        delta_color="inverse",
+    )
+
+    cols = st.columns(4)
+    cols[0].metric(
+        "% record dengan publisher",
+        _percent(diagnostic.with_publisher, total),
+        delta=_metric_color(diagnostic.with_publisher),
+        delta_color="inverse",
+    )
+    cols[1].metric(
+        "% record dengan bahasa",
+        _percent(diagnostic.with_language, total),
+        delta=_metric_color(diagnostic.with_language),
+        delta_color="inverse",
+    )
+
+    dup_count = len(diagnostic.duplicate_identifiers)
+    cols[2].metric(
+        "Identifier duplikat",
+        dup_count,
+        delta=f"+{dup_count} identifier bermasalah" if dup_count > 0 else None,
+        delta_color="inverse",
+    )
+
+    del_count = diagnostic.deleted_records
+    cols[3].metric(
+        "Record deleted",
+        del_count,
+        delta=f"+{del_count} record deleted" if del_count > 0 else None,
+        delta_color="inverse",
+    )
 
     if diagnostic.problem_records:
         st.subheader("Record bermasalah")
@@ -250,8 +295,10 @@ def _render_recommendations_tab(audit: AuditResult) -> None:
         "Rekomendasi action membedakan pekerjaan editorial dan pekerjaan server agar masalah bisa ditangani "
         "oleh pihak yang tepat."
     )
-    dataframe = issues_to_dataframe(audit.issues)
-    st.dataframe(dataframe, use_container_width=True, hide_index=True)
+
+    if audit.issues:
+        dataframe = issues_to_dataframe(audit.issues)
+        st.dataframe(dataframe, use_container_width=True, hide_index=True)
 
     manager_actions = _unique_actions(issue.action_for_journal_manager for issue in audit.issues)
     it_actions = _unique_actions(issue.action_for_it_admin for issue in audit.issues)
@@ -263,14 +310,20 @@ def _render_recommendations_tab(audit: AuditResult) -> None:
             for action in manager_actions:
                 st.checkbox(action, value=False, key=f"manager-{action}", disabled=True)
         else:
-            st.write("Tidak ada action editorial khusus dari hasil pemeriksaan ini.")
+            st.success(
+                "Tidak ada rekomendasi action untuk pengelola jurnal. "
+                "OAI-PMH bisa diharvest dengan baik."
+            )
     with col2:
         st.subheader("Yang perlu dilakukan tim IT")
         if it_actions:
             for action in it_actions:
                 st.checkbox(action, value=False, key=f"it-{action}", disabled=True)
         else:
-            st.write("Tidak ada action server khusus dari hasil pemeriksaan ini.")
+            st.success(
+                "Tidak ada rekomendasi action untuk tim IT. "
+                "OAI-PMH bisa diharvest dengan baik."
+            )
 
 
 def _render_technical_tab(audit: AuditResult) -> None:
@@ -299,7 +352,7 @@ def _render_technical_tab(audit: AuditResult) -> None:
 
 
 def _render_downloads(audit: AuditResult) -> None:
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     col1.download_button(
         "Download publikasi CSV",
         records_to_csv_bytes(audit.records),
@@ -307,24 +360,18 @@ def _render_downloads(audit: AuditResult) -> None:
         mime="text/csv",
     )
     col2.download_button(
-        "Download audit JSON",
-        audit_to_json(audit),
-        file_name="audit_oai_pmh.json",
-        mime="application/json",
-    )
-    col3.download_button(
         "Download rekomendasi CSV",
         issues_to_csv_bytes(audit.issues),
         file_name="rekomendasi_oai_pmh.csv",
         mime="text/csv",
     )
-    col4.download_button(
+    col3.download_button(
         "Download ringkasan Markdown",
         summary_to_markdown(audit),
         file_name="ringkasan_oai_pmh.md",
         mime="text/markdown",
     )
-    col5.download_button(
+    col4.download_button(
         "Download laporan TXT",
         summary_to_txt(audit),
         file_name="laporan_oai_pmh.txt",
